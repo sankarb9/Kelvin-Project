@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expense Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f1f4f5;--panel:#fff;--ink:#16222b;--mute:#62727d;--line:#d6dfe4;--accent:#17695a;--accent-hover:#11574a;--accent-ink:#fff;--hover:#f1f7f6;--danger:#b3372d}
+@media (prefers-color-scheme:dark){:root{--bg:#10171c;--panel:#192329;--ink:#e6edf0;--mute:#8d9ca6;--line:#2b3942;--accent:#4fb8a1;--accent-hover:#6cc9b5;--accent-ink:#0c1a16;--hover:#1f2c33;--danger:#ef7d72}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+header{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.bar{max-width:1120px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px}
+.mark{width:20px;height:20px;border-radius:5px;border:3px solid var(--accent);position:relative}
+.mark::after{content:"";position:absolute;left:2px;right:2px;bottom:2px;height:5px;background:var(--accent);border-radius:1px}
+.user{display:flex;align-items:center;gap:12px;color:var(--mute);font-size:14px}
+.user b{color:var(--ink);font-weight:500}
+.wrap{max-width:1120px;margin:0 auto;padding:24px 16px 56px;display:grid;gap:20px;grid-template-columns:320px 1fr;align-items:start}
+@media (max-width:860px){.wrap{grid-template-columns:1fr}}
+h2{font-size:16px;font-weight:600;margin:0 0 14px;letter-spacing:-.005em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:0 1px 2px rgba(16,32,40,.04)}
+.side{position:sticky;top:76px}@media (max-width:860px){.side{position:static}}
+label{display:block;font-size:13px;font-weight:500;margin:14px 0 6px}
+input,select,button{font:inherit;color:inherit}
+input,select{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 14px;transition:background .15s,border-color .15s}
+button:hover{background:var(--hover)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;width:100%;margin-top:18px;padding:10px}
+button.primary:hover{background:var(--accent-hover)}
+button.link{border:0;background:none;padding:4px 8px;color:var(--mute);font-size:13.5px}
+button.link:hover{background:var(--hover);color:var(--ink)}button.link.del:hover{color:var(--danger)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.msg{min-height:20px;font-size:13px;color:var(--danger);margin-top:10px}
+.main{display:grid;gap:20px;align-content:start}
+.hero{padding:0;overflow:hidden}
+.hero-top{background:var(--accent);color:var(--accent-ink);padding:24px 22px}
+.total{font-size:56px;font-weight:600;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums}
+.note{opacity:.85;margin-top:4px}
+.filters{display:flex;gap:12px;padding:6px 20px 18px}.filters>div{flex:1}
+.cat{display:grid;grid-template-columns:120px 1fr 90px;gap:12px;align-items:center;font-size:14px;margin:10px 0}
+.track{background:var(--bg);border-radius:5px;height:10px;overflow:hidden}.fill{height:100%;border-radius:5px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto;margin:0 -8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-weight:500;color:var(--mute);text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 8px;border-bottom:1px solid var(--line)}tbody tr:hover{background:var(--hover)}tbody tr:last-child td{border-bottom:0}
+th.num{text-align:right}td.act{white-space:nowrap}
+.empty{color:var(--mute);padding:8px 0}
+@media (max-width:520px){.cat{grid-template-columns:90px 1fr 70px}.total{font-size:42px}.filters{flex-direction:column}}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="logo"><span class="mark"></span>Expense Tracker</div>
+  <div class="user"><span>Signed in as <b id="who">…</b></span><button id="logout" type="button">Log out</button></div>
+</div></header>
+<div class="wrap">
+  <aside class="panel side">
+    <h2 id="formTitle">Add an expense</h2>
+    <form id="form" autocomplete="off">
+      <label for="amount">Amount</label>
+      <input id="amount" type="number" step="0.01" min="0.01" required>
+      <label for="category">Category</label>
+      <select id="category"></select>
+      <input id="custom" placeholder="Custom category name" hidden style="margin-top:6px">
+      <label for="description">Description</label>
+      <input id="description" placeholder="Optional">
+      <label for="date">Date</label>
+      <input id="date" type="date" required>
+      <button class="primary" id="save" type="submit">Add expense</button>
+      <button type="button" id="cancel" hidden style="width:100%;margin-top:8px">Cancel edit</button>
+      <div class="msg" id="msg" role="alert"></div>
+    </form>
+  </aside>
+
+  <main class="main">
+    <section class="panel hero">
+      <div class="hero-top">
+        <div class="total" id="total">0.00</div>
+        <div class="note" id="totalNote">spent in total</div>
+      </div>
+      <div class="filters">
+        <div><label for="fMonth">Month</label><input id="fMonth" type="month"></div>
+        <div><label for="fCat">Category</label><select id="fCat"><option value="">All</option></select></div>
+      </div>
+    </section>
+    <section class="panel"><h2>By category</h2><div id="cats"></div></section>
+    <section class="panel"><h2>Expenses</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>Date</th><th>Category</th><th>Description</th><th class="num">Amount</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+      <div class="empty" id="empty" hidden>No expenses match. Add one using the form.</div>
+    </section>
+  </main>
+</div>
+
+<script>
+const CATS = ["Food","Transport","Shopping","Bills","Entertainment","Health","Other"];
+const $ = id => document.getElementById(id);
+const money = n => Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const color = s => `hsl(${[...s.toLowerCase()].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7)} 48% 52%)`;
+let editingId = null, expenses = [];
+
+async function api(url, opts) {
+  const res = await fetch(url, opts);
+  if (res.status === 401) { location.href = "/login"; throw new Error("Please sign in."); }
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Request failed.");
+  return res.status === 204 ? null : res.json();
+}
+const qs = () => new URLSearchParams({month: $("fMonth").value, category: $("fCat").value}).toString();
+
+function fillCategories(extra = []) {
+  const all = [...new Set([...CATS, ...extra])];
+  $("category").innerHTML = all.map(c => `<option>${esc(c)}</option>`).join("") + `<option value="__new">+ New category</option>`;
+  const keep = $("fCat").value;
+  $("fCat").innerHTML = `<option value="">All</option>` + all.map(c => `<option>${esc(c)}</option>`).join("");
+  $("fCat").value = keep;
+}
+
+async function refresh() {
+  const [list, sum] = await Promise.all([api("/api/expenses?" + qs()), api("/api/summary?" + qs())]);
+  expenses = list;
+  $("total").textContent = money(sum.total);
+  $("totalNote").textContent = `across ${sum.count} expense${sum.count === 1 ? "" : "s"}` +
+    ($("fMonth").value ? ` in ${$("fMonth").value}` : "");
+  const max = Math.max(...sum.rows.map(r => r.total), 1);
+  $("cats").innerHTML = sum.rows.length ? sum.rows.map(r => `
+    <div class="cat"><span><span class="dot" style="background:${color(r.category)}"></span>${esc(r.category)}</span>
+    <div class="track"><div class="fill" style="width:${r.total / max * 100}%;background:${color(r.category)}"></div></div>
+    <span class="num">${money(r.total)}</span></div>`).join("") : `<div class="empty">Nothing to show yet.</div>`;
+  $("rows").innerHTML = list.map(e => `<tr>
+    <td>${esc(e.date)}</td><td><span class="dot" style="background:${color(e.category)}"></span>${esc(e.category)}</td><td>${esc(e.description)}</td>
+    <td class="num">${money(e.amount)}</td>
+    <td class="num act"><button class="link" data-edit="${e.id}">Edit</button><button class="link del" data-del="${e.id}">Delete</button></td></tr>`).join("");
+  $("empty").hidden = list.length > 0;
+  fillCategories([...sum.rows.map(r => r.category), ...list.map(e => e.category)]);
+}
+
+function resetForm() {
+  editingId = null;
+  $("form").reset(); $("custom").hidden = true;
+  $("date").value = new Date().toISOString().slice(0, 10);
+  $("formTitle").textContent = "Add an expense"; $("save").textContent = "Add expense"; $("cancel").hidden = true;
+}
+
+$("category").addEventListener("change", () => { $("custom").hidden = $("category").value !== "__new"; });
+$("cancel").onclick = () => { resetForm(); $("msg").textContent = ""; };
+$("fMonth").onchange = $("fCat").onchange = refresh;
+
+$("form").addEventListener("submit", async ev => {
+  ev.preventDefault(); $("msg").textContent = "";
+  const category = $("category").value === "__new" ? $("custom").value : $("category").value;
+  const body = JSON.stringify({amount: $("amount").value, category, description: $("description").value, date: $("date").value});
+  try {
+    await api(editingId ? `/api/expenses/${editingId}` : "/api/expenses",
+      {method: editingId ? "PUT" : "POST", headers: {"Content-Type": "application/json"}, body});
+    resetForm(); await refresh();
+  } catch (e) { $("msg").textContent = e.message; }
+});
+
+$("rows").addEventListener("click", async ev => {
+  const edit = ev.target.dataset.edit, del = ev.target.dataset.del;
+  if (edit) {
+    const e = expenses.find(x => x.id == edit);
+    editingId = e.id;
+    $("amount").value = e.amount; $("category").value = e.category;
+    $("custom").hidden = true; $("description").value = e.description === "-" ? "" : e.description; $("date").value = e.date;
+    $("formTitle").textContent = "Edit expense"; $("save").textContent = "Save changes"; $("cancel").hidden = false;
+    $("amount").focus();
+  } else if (del && confirm("Delete this expense?")) {
+    try { await api(`/api/expenses/${del}`, {method: "DELETE"}); await refresh(); }
+    catch (e) { $("msg").textContent = e.message; }
+  }
+});
+
+$("logout").onclick = async () => { await fetch("/api/logout", {method: "POST"}); location.href = "/login"; };
+api("/api/me").then(u => { $("who").textContent = u.username; }).catch(() => {});
+fillCategories(); resetForm();
+refresh().catch(e => { $("msg").textContent = e.message + " Check that MongoDB is running."; });
+</script>
+</body>
+</html>

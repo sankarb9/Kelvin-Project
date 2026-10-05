@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Expense Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f1f4f5;--panel:#fff;--ink:#16222b;--mute:#62727d;--line:#d6dfe4;--accent:#17695a;--accent-hover:#11574a;--accent-ink:#fff;--danger:#b3372d}
+@media (prefers-color-scheme:dark){:root{--bg:#10171c;--panel:#192329;--ink:#e6edf0;--mute:#8d9ca6;--line:#2b3942;--accent:#4fb8a1;--accent-hover:#6cc9b5;--accent-ink:#0c1a16;--danger:#ef7d72}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;grid-template-columns:1fr 1fr;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+@media (max-width:820px){body{grid-template-columns:1fr}.brand{padding:28px 24px}.brand h1{font-size:26px}.brand p{display:none}}
+.brand{background:var(--accent);color:var(--accent-ink);padding:56px;display:flex;flex-direction:column;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px}
+.mark{width:22px;height:22px;border-radius:6px;border:3px solid currentColor;position:relative}
+.mark::after{content:"";position:absolute;left:3px;right:3px;bottom:3px;height:5px;background:currentColor;border-radius:1px}
+.brand h1{font-size:44px;line-height:1.1;letter-spacing:-.025em;margin:0 0 14px;max-width:11em}
+.brand p{margin:0;max-width:26em;opacity:.85}
+.formside{display:grid;place-items:center;padding:32px 20px}
+.card{width:100%;max-width:380px}
+.tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:24px}
+.tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:10px 0;font:inherit;font-weight:500;color:var(--mute);cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+h2{font-size:22px;margin:0 0 4px;letter-spacing:-.01em}.sub{color:var(--mute);margin:0 0 6px}
+label{display:block;font-size:13px;font-weight:500;margin:16px 0 6px}
+input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:inherit;font:inherit}
+input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.hint{font-size:12.5px;color:var(--mute);margin-top:4px}
+.submit{width:100%;margin-top:22px;padding:11px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:600;cursor:pointer}
+.submit:hover{background:var(--accent-hover)}.submit:disabled{opacity:.6;cursor:wait}
+.submit:focus-visible,.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.msg{min-height:22px;margin-top:12px;font-size:13.5px;color:var(--danger)}
+</style>
+</head>
+<body>
+<section class="brand">
+  <div class="logo"><span class="mark"></span>Expense Tracker</div>
+  <div>
+    <h1>Know where your money goes.</h1>
+    <p>Log what you spend, see it by category and month, and keep your records private to your account.</p>
+  </div>
+  <div></div>
+</section>
+
+<main class="formside">
+  <div class="card">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabIn" aria-selected="true">Sign in</button>
+      <button role="tab" id="tabUp" aria-selected="false">Create account</button>
+    </div>
+    <h2 id="title">Welcome back</h2>
+    <p class="sub" id="sub">Sign in to see your expenses.</p>
+    <form id="form">
+      <label for="username">Email or username</label>
+      <input id="username" type="text" autocomplete="username" required minlength="3" maxlength="254" autofocus>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required minlength="8">
+      <div class="hint" id="hint" hidden>At least 8 characters.</div>
+      <button class="submit" id="submit" type="submit">Sign in</button>
+      <div class="msg" id="msg" role="alert"></div>
+    </form>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let mode = "in";
+function setMode(m) {
+  mode = m;
+  $("tabIn").setAttribute("aria-selected", m === "in");
+  $("tabUp").setAttribute("aria-selected", m === "up");
+  $("title").textContent = m === "in" ? "Welcome back" : "Create your account";
+  $("sub").textContent = m === "in" ? "Sign in to see your expenses." : "Start tracking in under a minute.";
+  $("submit").textContent = m === "in" ? "Sign in" : "Create account";
+  $("password").autocomplete = m === "in" ? "current-password" : "new-password";
+  $("hint").hidden = m === "in";
+  $("msg").textContent = "";
+}
+$("tabIn").onclick = () => setMode("in");
+$("tabUp").onclick = () => setMode("up");
+
+$("form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  $("msg").textContent = ""; $("submit").disabled = true;
+  try {
+    const res = await fetch(mode === "in" ? "/api/login" : "/api/register", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({username: $("username").value, password: $("password").value})
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Something went wrong. Try again.");
+    location.href = "/";
+  } catch (e) {
+    $("msg").textContent = e.message; $("submit").disabled = false;
+  }
+});
+</script>
+</body>
+</html>
